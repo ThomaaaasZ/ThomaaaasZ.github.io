@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"thomaaaasz.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.1","exturl":false,"sidebar":{"position":"left","width":200,"display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块： 车站管理：提供车站、城市站点">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起">
+<meta property="og:url" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/index.html">
+<meta property="og:site_name" content="Watcher&#39;s Note">
+<meta property="og:description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块： 车站管理：提供车站、城市站点">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8+Set.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E6%8E%A5%E5%8F%A3.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E5%8F%82%E6%95%B0%E6%A0%A1%E9%AA%8C.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E7%94%A8%E6%88%B7%E5%90%8D%E6%A0%A1%E9%AA%8C.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E6%8B%89%E9%BB%91%E6%81%B6%E6%84%8F%E6%B3%A8%E9%94%80%E7%94%A8%E6%88%B7.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E7%BB%84%E4%BB%B6%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E6%B3%A8%E5%86%8C%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E4%B9%98%E5%AE%A2%E4%BF%A1%E6%81%AF%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png">
+<meta property="article:published_time" content="2023-09-30T14:43:03.000Z">
+<meta property="article:modified_time" content="2023-10-02T09:48:34.389Z">
+<meta property="article:author" content="Watcher">
+<meta property="article:tag" content="MySQL 布隆过滤器 Redis 表设计 缓存击穿">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png">
+
+
+<link rel="canonical" href="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/","path":"2023/09/30/深入理解12306项目之注册模块/","title":"【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起 | Watcher's Note</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Watcher's Note</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">想学技术的懒狗</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%BC%80%E9%97%A8%E8%A7%81%E5%B1%B1%EF%BC%8C12306%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97%E7%AE%80%E4%BB%8B%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">一、开门见山，12306核心模块简介：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BC%9A%E5%91%98%E6%9C%8D%E5%8A%A1%E9%83%A8%E5%88%86%E4%B8%89%E5%BC%A0%E6%9C%80%E4%B8%BB%E8%A6%81%E7%9A%84%E8%A1%A8%E5%88%86%E5%88%AB%E6%98%AF%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">二、会员服务部分三张最主要的表分别是：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E6%B3%A8%E5%86%8C%E5%9C%BA%E6%99%AF%E4%B8%8B%E4%BC%9A%E5%AD%98%E5%9C%A8%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">三、为什么注册场景下会存在缓存穿透的问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B8%B8%E8%A7%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%EF%BC%9A"><span class="nav-number">3.1.</span> <span class="nav-text">常规解决方案：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%EF%BC%9A%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8-Redis-Set"><span class="nav-number">3.2.</span> <span class="nav-text">项目中的解决方案：布隆过滤器+Redis Set</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%BD%BF%E7%94%A8%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E8%BF%9B%E8%A1%8C%E6%B3%A8%E5%86%8C%E5%8F%82%E6%95%B0%E7%9A%84%E6%A0%A1%E9%AA%8C%EF%BC%88%E6%AD%A4%E9%83%A8%E5%88%86%E4%B8%8E%E4%B8%BB%E9%A2%98%E2%80%9D%E8%A1%A8%E8%AE%BE%E8%AE%A1%E2%80%9D%E6%97%A0%E5%85%B3%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">四、使用责任链模式进行注册参数的校验（此部分与主题”表设计”无关）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">1、为什么是责任链模式？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E7%9A%84%E4%BD%BF%E7%94%A8%EF%BC%9A"><span class="nav-number">4.2.</span> <span class="nav-text">2、项目中的责任链模式的使用：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%9C%80%E5%90%8E%E6%B3%A8%E5%86%8C%E5%9C%BA%E6%99%AF%E7%9A%84%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B%E5%A6%82%E4%B8%8B%EF%BC%9A"><span class="nav-number">5.</span> <span class="nav-text">五、最后注册场景的整体流程如下：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%B9%98%E8%BD%A6%E4%BA%BA%E7%9B%B8%E5%85%B3%E6%95%B0%E6%8D%AE%EF%BC%9A"><span class="nav-number">6.</span> <span class="nav-text">六、乘车人相关数据：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E4%B8%AA%E4%BA%BA%E6%80%BB%E7%BB%93%E4%B8%8E%E6%80%9D%E8%80%83%EF%BC%9A"><span class="nav-number">7.</span> <span class="nav-text">七、个人总结与思考：</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Watcher"
+      src="/uploads/profile.jpg">
+  <p class="site-author-name" itemprop="name">Watcher</p>
+  <div class="site-description" itemprop="description"><font color="#FFFFFF">Machine is Learning.</font></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://tech.meituan.com/" title="https:&#x2F;&#x2F;tech.meituan.com&#x2F;" rel="noopener" target="_blank">美团技术团队</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://learn.lianglianglee.com/" title="https:&#x2F;&#x2F;learn.lianglianglee.com&#x2F;" rel="noopener" target="_blank">lianglianglee的技术文章</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/wy123/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;wy123&#x2F;" rel="noopener" target="_blank">MSSQL123的技术博客</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://javadoop.com/" title="https:&#x2F;&#x2F;javadoop.com&#x2F;" rel="noopener" target="_blank">深挖源码之JavaDoop</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://tech.youzan.com/tag/back-end/page/3/" title="https:&#x2F;&#x2F;tech.youzan.com&#x2F;tag&#x2F;back-end&#x2F;page&#x2F;3&#x2F;" rel="noopener" target="_blank">有赞技术团队</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/paddix/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;paddix&#x2F;" rel="noopener" target="_blank">liuxiaopeng的技术博客</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/iwehdio/p/14119464.html" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;iwehdio&#x2F;p&#x2F;14119464.html" rel="noopener" target="_blank">iwehdio的技术博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/profile.jpg">
+      <meta itemprop="name" content="Watcher">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Watcher's Note">
+      <meta itemprop="description" content="<font color="#FFFFFF">Machine is Learning.</font>">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起 | Watcher's Note">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-09-30 22:43:03" itemprop="dateCreated datePublished" datetime="2023-09-30T22:43:03+08:00">2023-09-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-10-02 17:48:34" itemprop="dateModified" datetime="2023-10-02T17:48:34+08:00">2023-10-02</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="一、开门见山，12306核心模块简介："><a href="#一、开门见山，12306核心模块简介：" class="headerlink" title="一、开门见山，12306核心模块简介："></a>一、开门见山，12306核心模块简介：</h3><p>12306的核心业务主要包括五大部分：</p>
+<p>1）<strong>会员服务</strong>：包括乘<strong>车人管理</strong>以及<strong>会员管理</strong>两大部分，其中：</p>
+<p><strong>乘车人管理</strong>主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。</p>
+<p><strong>会员管理</strong>主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。</p>
+<p>2）<strong>购票服务</strong>：包括<strong>车站管理</strong>、<strong>车票管理</strong>以及<strong>初始化任务</strong>三大模块：</p>
+<p><strong>车站管理</strong>：提供车站、城市站点查询功能。</p>
+<p><strong>车票管理</strong>：提供车票查询、购买车票以及取消订单等功能。</p>
+<p><strong>初始化任务</strong>：完成多种定时任务如列车站点余票更新、列车路线信息更新等功能。</p>
+<p>3）<strong>订单服务</strong>：提供订单管理的功能，主要包括创建订单、取消订单、支付回调以及订单查询的功能。</p>
+<p>4）<strong>支付服务</strong>：负责对接支付宝沙箱环境模拟支付。</p>
+<p>5）<strong>网关服务</strong>：提供验证用户登录状态、系统访问黑白名单的功能。</p>
+<p>本文介绍会员服务部分涉及到的表结构设计以及其相应的功能，相应的表结构如下图所示：</p>
+<span id="more"></span>
+
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png" alt="图片"></p>
+<h3 id="二、会员服务部分三张最主要的表分别是："><a href="#二、会员服务部分三张最主要的表分别是：" class="headerlink" title="二、会员服务部分三张最主要的表分别是："></a>二、会员服务部分三张最主要的表分别是：</h3><ul>
+<li>t_user 会员数据表：存储会员账号、密码、证件号、邮箱、手机号等信息（基于username分表）</li>
+<li>t_user_mail 会员邮箱数据表：存储会员邮箱和用户名的关系（基于mail分表）</li>
+<li>t_user_phone 会员手机号数据表：存储会员手机号和用户名的关系（基于phone分表）</li>
+</ul>
+<p>为什么需要三张表呢，这是因为系统同时支持用户基于username、mail以及phone进行登录，其中t_user中存储的是最全量的用户信息，而t_user_mail以及t_user_phone中存储的是用户名与手机号或者邮箱的对应信息。三者同样都是通过哈希取模的方式来进行分片：</p>
+<p>其次为了解决在高并发注册时可能存在的<strong>缓存穿透</strong>问题，还需要额外维护两张表：</p>
+<ul>
+<li>t_user_reuse  用户名可复用表：存储已被注销的可用用户名，解决布隆过滤器无法删除的问题。</li>
+<li>t_user_deletion  用户证件号注销表：存储被注销过得证件号记录数据，反复注册并注销的用户拉入黑名单。</li>
+</ul>
+<h3 id="三、为什么注册场景下会存在缓存穿透的问题？"><a href="#三、为什么注册场景下会存在缓存穿透的问题？" class="headerlink" title="三、为什么注册场景下会存在缓存穿透的问题？"></a>三、为什么注册场景下会存在缓存穿透的问题？</h3><p>个人总结：在用户注册场景下，常规的思路就是直接去查【缓存】以及【数据库】中是否存在相应的用户名，如果不存在那么才能对当前用户进行注册。而用户输入的用户名是极有可能不存在于缓存以及数据库中，在高并发的场景下会导致数据库压力剧增。</p>
+<h4 id="常规解决方案："><a href="#常规解决方案：" class="headerlink" title="常规解决方案："></a>常规解决方案：</h4><p>1、<strong>布隆过滤器</strong>：使用布隆过滤器记录所有的已注册用户名，注册用户前首先查询布隆过滤器，如果用户名不存在，则该用户名是一定可用的。</p>
+<p>但是如果某用户注销了账户，那么改用户名将可以被再次使用，然而，布隆过滤器由于无法删除元素，因此无法处理这种情况。</p>
+<p>缺点：布隆过滤器无法删除元素，导致注销后的用户名无法被再次使用。</p>
+<p>2、<strong>Set集合</strong>：使用Redis的Set集合对所有的已注册用户名进行记录，同理注册用户前首先查询Redis集合，再根据查询结果决定是否是合法的用户名。</p>
+<p>缺点：1）直接使用Set进行用户名存储在海量数据的情况下会占用大量的内存空间；2）将所有的用户信息存储在一个Key中显然不合理，若进行分片则会增加系统复杂度。</p>
+<p>3、<strong>分布式锁</strong>：采用分布式锁保证在注册场景下每次只有一条请求能够进入数据库。</p>
+<p>缺点：注册时间过程影响用户体验。</p>
+<h4 id="项目中的解决方案：布隆过滤器-Redis-Set"><a href="#项目中的解决方案：布隆过滤器-Redis-Set" class="headerlink" title="项目中的解决方案：布隆过滤器+Redis Set"></a>项目中的解决方案：布隆过滤器+Redis Set</h4><p><strong>布隆过滤器</strong>：作用是缓存所有的已注册用户的用户名；</p>
+<p><strong>Redis Set</strong>：作用是缓存所有的已注销用户的用户名；</p>
+<p>此时用户的注册流程：</p>
+<p>1、用户输入用户名后首先查询布隆过滤器，如果不存在则用户名合法；</p>
+<p>2、如果用户名存在则进一步查询Set结构（即查询该用户名是否被注销了），如果存在则用户名可用；</p>
+<p>3、如果用户名存在于布隆过滤器中且不存在Set集合中则说明用户名存在，注册流程终止。</p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8+Set.png" alt="图片"></p>
+<p><strong>用户恶意注销问题</strong>：如果存在用户频繁的注销账号，那么就会导致Set结构过大的问题，所以系统维护了一个t_user_deletion表，用来记录所有用户的注销记录，注销记录数量大于5的用户将被禁止注销行为。</p>
+<h3 id="四、使用责任链模式进行注册参数的校验（此部分与主题”表设计”无关）"><a href="#四、使用责任链模式进行注册参数的校验（此部分与主题”表设计”无关）" class="headerlink" title="四、使用责任链模式进行注册参数的校验（此部分与主题”表设计”无关）"></a>四、使用责任链模式进行注册参数的校验（此部分与主题”表设计”无关）</h3><h4 id="1、为什么是责任链模式？"><a href="#1、为什么是责任链模式？" class="headerlink" title="1、为什么是责任链模式？"></a>1、为什么是责任链模式？</h4><p>1）如果不使用责任链模式，直接在原有的函数上进行参数规则的校验显然会增加代码的复杂度；即使对原有的大函数进行拆分，拆分为若干个小函数再进行使用，减少代码的复杂性，这样也是不满足开闭原则的；</p>
+<p>车轱辘话：使用责任链模式可用减少代码复杂性，满足开闭原则，提升代码逼格。</p>
+<h4 id="2、项目中的责任链模式的使用："><a href="#2、项目中的责任链模式的使用：" class="headerlink" title="2、项目中的责任链模式的使用："></a>2、项目中的责任链模式的使用：</h4><p>1）首先基于AbstractChainHandler接口实现一个注册责任链接口，好处是所有的注册责任链组件可用复用mark方法，并且提升代码可读性：</p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E6%8E%A5%E5%8F%A3.png" alt="图片"></p>
+<p>2）分别构建参数校验组件、用户名校验组件以及拉黑恶意注销用户组件，注意执行时间越长的组件，其order应该越大：</p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E5%8F%82%E6%95%B0%E6%A0%A1%E9%AA%8C.png" alt="图片"></p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E7%94%A8%E6%88%B7%E5%90%8D%E6%A0%A1%E9%AA%8C.png" alt="图片"></p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F-%E6%8B%89%E9%BB%91%E6%81%B6%E6%84%8F%E6%B3%A8%E9%94%80%E7%94%A8%E6%88%B7.png" alt="图片"></p>
+<p>3）通过实现CommandLine接口，重写run方法保证责任链组件再应用启动后被初始化，所有的责任链组件使用Map进行缓存，基于mark()函数的返回值去调用不同的责任链。</p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%B4%A3%E4%BB%BB%E9%93%BE%E7%BB%84%E4%BB%B6%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8.png" alt="图片"></p>
+<h3 id="五、最后注册场景的整体流程如下："><a href="#五、最后注册场景的整体流程如下：" class="headerlink" title="五、最后注册场景的整体流程如下："></a>五、最后注册场景的整体流程如下：</h3><p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E6%B3%A8%E5%86%8C%E6%B5%81%E7%A8%8B.png" alt="图片"></p>
+<p>1、后端接收到用户输入的用户名等信息后进入责任链组件，依次进行参数非空校验、用户名唯一校验以及恶意注销用户的校验；</p>
+<p>2、因为系统需要支持用户基于用户名、手机号以及邮箱号进行登录，所以在将用户基本信息存入t_user表的同时，还需要更新对应的t_user_phone以及t_user_mail表的信息；</p>
+<p>3、为了进行高效的用户名唯一校验，需要更新布隆过滤器、删除Redis Set结构以及t_user_reuse中对应的用户名信息。</p>
+<h3 id="六、乘车人相关数据："><a href="#六、乘车人相关数据：" class="headerlink" title="六、乘车人相关数据："></a>六、乘车人相关数据：</h3><p>除去上述的五张表外，在12306项目中，一个用户可以多名乘车人，可以用来买票时选择多人购票。使用表t_passenger存储用户与乘车人之间的关系，用户表和乘车人表之间通过用户名进行关联，是一对多的关联关系。</p>
+<p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E4%B9%98%E5%AE%A2%E4%BF%A1%E6%81%AF%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png" alt="图片"></p>
+<h3 id="七、个人总结与思考："><a href="#七、个人总结与思考：" class="headerlink" title="七、个人总结与思考："></a>七、个人总结与思考：</h3><ul>
+<li>会员服务部分的主体表是t_user表，存储了会员用户的基本信息，在分表的环境下为了保证用户能够同时基于用户名、邮箱以及手机号进行登录，在系统中还同时维护了t_user_mail，t_user_phone；</li>
+<li>在注册流程中可能存在高并发场景下的缓存击穿问题，常规的解决方案包括布隆过滤器、Set集合以及分布式锁等方案，这些方案都有明显的缺点，在12306项目中使用布隆过滤器+Redis Set集合作为解决方案，同时维护了t_user_reuse以及t_user_deletion表来记录注销的用户名以及恶意注销的用户。</li>
+</ul>
+<p>但是此种方案依然可能存在问题：</p>
+<p>1、<strong>查询性能下降</strong>：相较于常规的解决方案，项目中采取的办法需要查询布隆过滤器以及Redis Set集合，复杂度上升；</p>
+<p>2、<strong>用户大量注销问题</strong>：如果存在用户大量注销账号，那么同样会导致Set结构过大的问题，后续可能需要考虑对Redis Set集合进行分片保证查询性能。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8-Redis-%E8%A1%A8%E8%AE%BE%E8%AE%A1-%E7%BC%93%E5%AD%98%E5%87%BB%E7%A9%BF/" rel="tag"># MySQL 布隆过滤器 Redis 表设计 缓存击穿</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E6%95%B0%E6%8D%AE%E8%A1%A8%E4%BB%A5%E5%8F%8A%E8%AE%A2%E5%8D%95%E6%95%B0%E6%8D%AE%E8%A1%A8%E8%AE%BE%E8%AE%A1/" rel="next" title="【12306】深入理解12306项目之列车数据表以及订单数据表设计">
+                  【12306】深入理解12306项目之列车数据表以及订单数据表设计 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder"><a href='ThomaaaasZ.github.io'>BoZeng</a></span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
