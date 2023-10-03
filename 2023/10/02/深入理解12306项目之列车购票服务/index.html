@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"thomaaaasz.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.1","exturl":false,"sidebar":{"position":"left","width":200,"display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="一、幂等组件的分类：在项目中幂等组件主要包含两大类，分别是基于HTTP API场景下的幂等验证组件，以及消息队列场景下的幂等验证组件。其中HTTP API场景下支持SpEL、token以及参数的方式进行幂等验证；而消息队列目前仅支持SpEL的方式进行幂等验证：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【12306】深入理解12306项目之幂等组件">
+<meta property="og:url" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/index.html">
+<meta property="og:site_name" content="Watcher&#39;s Note">
+<meta property="og:description" content="一、幂等组件的分类：在项目中幂等组件主要包含两大类，分别是基于HTTP API场景下的幂等验证组件，以及消息队列场景下的幂等验证组件。其中HTTP API场景下支持SpEL、token以及参数的方式进行幂等验证；而消息队列目前仅支持SpEL的方式进行幂等验证：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E5%88%86%E7%B1%BB.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%B9%82%E7%AD%89%E6%B3%A8%E8%A7%A3%E5%8F%82%E6%95%B0.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%88%87%E9%9D%A2%E7%B1%BB%E5%AE%9A%E4%B9%89.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B61.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B62.png">
+<meta property="og:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B63.png">
+<meta property="article:published_time" content="2023-10-02T12:52:31.000Z">
+<meta property="article:modified_time" content="2023-10-03T09:58:33.719Z">
+<meta property="article:author" content="Watcher">
+<meta property="article:tag" content="Programming">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E5%88%86%E7%B1%BB.png">
+
+
+<link rel="canonical" href="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/","path":"2023/10/02/深入理解12306项目之列车购票服务/","title":"【12306】深入理解12306项目之幂等组件"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>【12306】深入理解12306项目之幂等组件 | Watcher's Note</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Watcher's Note</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">想学技术的懒狗</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E7%9A%84%E5%88%86%E7%B1%BB%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">一、幂等组件的分类：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%E6%B3%A8%E8%A7%A3%E4%BD%BF%E7%94%A8%E5%B9%82%E7%AD%89%E5%8A%9F%E8%83%BD%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">二、使用自定义注解使用幂等功能：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%B3%A8%E8%A7%A3%E6%94%AF%E6%8C%81%E7%9A%84%E5%8F%82%E6%95%B0%EF%BC%9A"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 自定义注解支持的参数：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E5%AE%9A%E4%B9%89%E5%88%87%E9%9D%A2%E7%B1%BB%E8%BF%9B%E8%A1%8CAOP%E5%A2%9E%E5%BC%BA%EF%BC%9A"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 定义切面类进行AOP增强：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%B9%82%E7%AD%89%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E4%B8%8E%E5%A4%84%E7%90%86%E9%80%BB%E8%BE%91%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">三、幂等的具体实现细节与处理逻辑：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%BB%A5%E5%9F%BA%E4%BA%8EMQ%E7%9A%84%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E4%B8%BA%E4%BE%8B%EF%BC%9A"><span class="nav-number">3.1.</span> <span class="nav-text">3.1  以基于MQ的幂等组件为例：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E8%BF%90%E8%A1%8C%E9%80%BB%E8%BE%91%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 幂等组件运行逻辑总结：</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Watcher"
+      src="/uploads/profile.jpg">
+  <p class="site-author-name" itemprop="name">Watcher</p>
+  <div class="site-description" itemprop="description"><font color="#FFFFFF">Machine is Learning.</font></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://tech.meituan.com/" title="https:&#x2F;&#x2F;tech.meituan.com&#x2F;" rel="noopener" target="_blank">美团技术团队</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://learn.lianglianglee.com/" title="https:&#x2F;&#x2F;learn.lianglianglee.com&#x2F;" rel="noopener" target="_blank">lianglianglee的技术文章</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/wy123/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;wy123&#x2F;" rel="noopener" target="_blank">MSSQL123的技术博客</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://javadoop.com/" title="https:&#x2F;&#x2F;javadoop.com&#x2F;" rel="noopener" target="_blank">深挖源码之JavaDoop</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://tech.youzan.com/tag/back-end/page/3/" title="https:&#x2F;&#x2F;tech.youzan.com&#x2F;tag&#x2F;back-end&#x2F;page&#x2F;3&#x2F;" rel="noopener" target="_blank">有赞技术团队</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/paddix/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;paddix&#x2F;" rel="noopener" target="_blank">liuxiaopeng的技术博客</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/iwehdio/p/14119464.html" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;iwehdio&#x2F;p&#x2F;14119464.html" rel="noopener" target="_blank">iwehdio的技术博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://thomaaaasz.github.io/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/profile.jpg">
+      <meta itemprop="name" content="Watcher">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Watcher's Note">
+      <meta itemprop="description" content="<font color="#FFFFFF">Machine is Learning.</font>">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="【12306】深入理解12306项目之幂等组件 | Watcher's Note">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【12306】深入理解12306项目之幂等组件
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-10-02 20:52:31" itemprop="dateCreated datePublished" datetime="2023-10-02T20:52:31+08:00">2023-10-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-10-03 17:58:33" itemprop="dateModified" datetime="2023-10-03T17:58:33+08:00">2023-10-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="一、幂等组件的分类："><a href="#一、幂等组件的分类：" class="headerlink" title="一、幂等组件的分类："></a>一、幂等组件的分类：</h2><p>在项目中幂等组件主要包含两大类，分别是基于HTTP API场景下的幂等验证组件，以及消息队列场景下的幂等验证组件。其中HTTP API场景下支持SpEL、token以及参数的方式进行幂等验证；而消息队列目前仅支持SpEL的方式进行幂等验证：</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B6%E5%88%86%E7%B1%BB.png" alt="幂等组件"></p>
+<span id="more"></span>
+
+<h2 id="二、使用自定义注解使用幂等功能："><a href="#二、使用自定义注解使用幂等功能：" class="headerlink" title="二、使用自定义注解使用幂等功能："></a>二、使用自定义注解使用幂等功能：</h2><h3 id="2-1-自定义注解支持的参数："><a href="#2-1-自定义注解支持的参数：" class="headerlink" title="2.1 自定义注解支持的参数："></a>2.1 自定义注解支持的参数：</h3><p>在@interface类中的提供了如下参数让我们在使用注解时进行指定，这里直接用马哥文档里面的图片进行展示，其中第一节中使用简单工厂创建幂等组件时用到了scene和type参数：</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%B9%82%E7%AD%89%E6%B3%A8%E8%A7%A3%E5%8F%82%E6%95%B0.png" alt="幂等注解参数"></p>
+<h3 id="2-2-定义切面类进行AOP增强："><a href="#2-2-定义切面类进行AOP增强：" class="headerlink" title="2.2 定义切面类进行AOP增强："></a>2.2 定义切面类进行AOP增强：</h3><p>项目中使用Spring提供的AOP技术来对幂等组件进行应用，使用环绕通知进行功能增强，切面类的定义如下所示：</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/%E5%88%87%E9%9D%A2%E7%B1%BB%E5%AE%9A%E4%B9%89.png" alt="切面类"></p>
+<p>至此我们可以大体理清楚幂等组件的处理逻辑：在方法执行的前后会进行幂等逻辑处理（execute方法）以及幂等后置处理（postProcessing方法），若出现重复消息则依据error标识进行处理，消费端抛出异常时会执行幂等异常处理方法（execeptionProcessing方法），下面对幂等组件的具体实现进行说明。</p>
+<h2 id="三、幂等的具体实现细节与处理逻辑："><a href="#三、幂等的具体实现细节与处理逻辑：" class="headerlink" title="三、幂等的具体实现细节与处理逻辑："></a>三、幂等的具体实现细节与处理逻辑：</h2><h3 id="3-1-以基于MQ的幂等组件为例："><a href="#3-1-以基于MQ的幂等组件为例：" class="headerlink" title="3.1  以基于MQ的幂等组件为例："></a>3.1  以基于MQ的幂等组件为例：</h3><p>1）在源码中调用execute方法后会先后执行buildWrapper方法构建幂等参数（这个是用作Redis的key），调用handler方法执行幂等的处理逻辑：</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B61.png" alt="幂等实现逻辑1"></p>
+<ul>
+<li>在builderWrapper中，通过SpEL工具解析相关表达式获取对应的key；</li>
+<li>之后进入handler方法，拼接前缀与key得到Redis的key，调用setNX方法，将value设置为消费中（标记当前消息的消费状态），过期时间为10min；</li>
+<li>如果setNX失败，说明存在重复消费的情况，如果当前消息消费成功抛出异常并且error标识置为true，如果当前消息的状态为正在消费则抛出异常并且error标识置为false。</li>
+</ul>
+<p>2）目标方法执行完后进入幂等后置处理（postProcessing方法），主要作用是将消息在Redis中的状态设置为消费成功。</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B62.png" alt="幂等实现逻辑2"></p>
+<p>3）如果消费端出现异常，那么会执行幂等异常处理方法（execeptionProcessing方法），将幂等标签删除，等待下次消费。</p>
+<p><img src="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A1/MQ%E5%B9%82%E7%AD%89%E7%BB%84%E4%BB%B63.png" alt="幂等实现逻辑3"></p>
+<h3 id="3-2-幂等组件运行逻辑总结："><a href="#3-2-幂等组件运行逻辑总结：" class="headerlink" title="3.2 幂等组件运行逻辑总结："></a>3.2 幂等组件运行逻辑总结：</h3><ul>
+<li>消费端接收到消息后首先在Redis中通过setNX方法新增消息状态为处理中的标识，并设置10min过期；</li>
+<li>如果设置成功则执行业务逻辑，业务逻辑执行成功将消息标识设置为已完成，否则直接删除Redis中的消息标识；</li>
+<li>如果setNX失败说明消息已经被消费端接受过了，检查消息状态如果为消费中则返回false，等待延迟消费，否则直接返回成功。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/10/02/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E5%88%97%E8%BD%A6%E6%95%B0%E6%8D%AE%E6%A3%80%E7%B4%A2%E6%A3%80%E7%B4%A2%E6%A8%A1%E5%9D%97/" rel="prev" title="列车数据检索">
+                  <i class="fa fa-angle-left"></i> 列车数据检索
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/10/03/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E5%88%97%E8%BD%A6%E8%B4%AD%E7%A5%A8%E6%9C%8D%E5%8A%A12/" rel="next" title="深入理解12306项目之列车购票服务2">
+                  深入理解12306项目之列车购票服务2 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder"><a href='ThomaaaasZ.github.io'>BoZeng</a></span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

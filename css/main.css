@@ -2368,7 +2368,7 @@ header.header {
   vertical-align: middle;
 }
 .links-of-author a::before {
-  background: #32ddd0;
+  background: #c490c4;
   display: inline-block;
   margin-right: 3px;
   transform: translateY(-2px);
@@ -2416,5 +2416,5 @@ header.header {
   display: block;
 }
 .post-toc ol {
-  font-size: 13px;
+  font-size: 12px;
 }
