@@ -19,12 +19,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"thomaaaasz.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.1","exturl":false,"sidebar":{"position":"left","width":200,"display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块： 车站管理：提供车站、城市站点">
+    <meta name="description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="【12306】深入理解12306项目之会员服务模块表设计-从注册功能说起">
 <meta property="og:url" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/index.html">
 <meta property="og:site_name" content="Watcher&#39;s Note">
-<meta property="og:description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块： 车站管理：提供车站、城市站点">
+<meta property="og:description" content="一、开门见山，12306核心模块简介：12306的核心业务主要包括五大部分： 1）会员服务：包括乘车人管理以及会员管理两大部分，其中： 乘车人管理主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。 会员管理主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。 2）购票服务：包括车站管理、车票管理以及初始化任务三大模块：">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png">
 <meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8+Set.png">
@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E6%B3%A8%E5%86%8C%E6%B5%81%E7%A8%8B.png">
 <meta property="og:image" content="https://thomaaaasz.github.io/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E4%B9%98%E5%AE%A2%E4%BF%A1%E6%81%AF%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png">
 <meta property="article:published_time" content="2023-09-30T14:43:03.000Z">
-<meta property="article:modified_time" content="2023-10-02T09:48:34.389Z">
+<meta property="article:modified_time" content="2023-10-10T09:39:54.850Z">
 <meta property="article:author" content="Watcher">
 <meta property="article:tag" content="MySQL 布隆过滤器 Redis 表设计 缓存击穿">
 <meta name="twitter:card" content="summary">
@@ -138,12 +138,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -236,7 +236,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2023-10-02 17:48:34" itemprop="dateModified" datetime="2023-10-02T17:48:34+08:00">2023-10-02</time>
+      <time title="修改时间：2023-10-10 17:39:54" itemprop="dateModified" datetime="2023-10-10T17:39:54+08:00">2023-10-10</time>
     </span>
 
   
@@ -253,6 +253,8 @@
 <p><strong>乘车人管理</strong>主要包括根据乘车人ID或用户名查询信息以及对乘车人进行增、删、改等功能。</p>
 <p><strong>会员管理</strong>主要包括登录、注册、登出、查询会员基本信息以及根据token检查登录状态等功能。</p>
 <p>2）<strong>购票服务</strong>：包括<strong>车站管理</strong>、<strong>车票管理</strong>以及<strong>初始化任务</strong>三大模块：</p>
+<span id="more"></span>
+
 <p><strong>车站管理</strong>：提供车站、城市站点查询功能。</p>
 <p><strong>车票管理</strong>：提供车票查询、购买车票以及取消订单等功能。</p>
 <p><strong>初始化任务</strong>：完成多种定时任务如列车站点余票更新、列车路线信息更新等功能。</p>
@@ -260,8 +262,6 @@
 <p>4）<strong>支付服务</strong>：负责对接支付宝沙箱环境模拟支付。</p>
 <p>5）<strong>网关服务</strong>：提供验证用户登录状态、系统访问黑白名单的功能。</p>
 <p>本文介绍会员服务部分涉及到的表结构设计以及其相应的功能，相应的表结构如下图所示：</p>
-<span id="more"></span>
-
 <p><img src="/2023/09/30/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A312306%E9%A1%B9%E7%9B%AE%E4%B9%8B%E6%B3%A8%E5%86%8C%E6%A8%A1%E5%9D%97/%E8%A1%A8%E6%95%B0%E6%8D%AEUML%E5%9B%BE.png" alt="图片"></p>
 <h3 id="二、会员服务部分三张最主要的表分别是："><a href="#二、会员服务部分三张最主要的表分别是：" class="headerlink" title="二、会员服务部分三张最主要的表分别是："></a>二、会员服务部分三张最主要的表分别是：</h3><ul>
 <li>t_user 会员数据表：存储会员账号、密码、证件号、邮箱、手机号等信息（基于username分表）</li>
